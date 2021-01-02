@@ -27,13 +27,16 @@ class SniffType(enum.IntEnum):
 
 
 def create_db_and_table():
-    conn = sqlite3.connect('OUIMapping.db')
-    conn.text_factory = str
-    print "[Info.] Connect database successfully"
+    try:
+        conn = sqlite3.connect("OUIMapping.db")
+        conn.text_factory = str
+        print "[Info.] Connect database successfully"
 
-    read_clients = pd.read_csv (r'./mac_address.csv')
-    read_clients.to_sql('OUIMAPPING', conn, if_exists='replace', index = False)
-    print "[Info.] Create table successfully"
+        read_clients = pd.read_csv (r"./mac_address.csv")
+        read_clients.to_sql("OUIMAPPING", conn, if_exists="replace", index = False)
+        print "[Info.] Create table successfully"
+    except BaseException as e:
+        print "[Exception] %s %s" % (type(e), str(e))
 
     return conn
 
@@ -111,7 +114,7 @@ def restore_MITM(gateway_IP, victim_IP, gateway_MAC, victim_MAC):
 def parse_ip_header(packet):
     try:
         ip_header_raw_data = packet[0:20]
-        ip_header = unpack('!BBHHHBBH4s4s', ip_header_raw_data)
+        ip_header = unpack("!BBHHHBBH4s4s", ip_header_raw_data)
 
         version_and_ihl = ip_header[0]
         version = version_and_ihl >> 4
@@ -131,10 +134,10 @@ def parse_ip_header(packet):
         source_address = socket.inet_ntoa(ip_header[8])
         destination_address = socket.inet_ntoa(ip_header[9])
 
-        print '[Info.] IP header:'
-        print '{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s' \
-            .format('Version', 'IHL(4 bytes)', 'Type of Service', 'Total Length(bytes) ', 'Identification', 'Flags',
-                    'Fragment Offset', 'Time to Live', 'Protocol', 'Source Address', 'Destination Address') \
+        print "[Info.] IP header:"
+        print "{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s" \
+            .format("Version", "IHL(4 bytes)", "Type of Service", "Total Length(bytes)", "Identification", "Flags",
+                    "Fragment Offset", "Time to Live", "Protocol", "Source Address", "Destination Address") \
             % (str(version), str(ihl), str(type_of_servise), str(total_length), str(identification), str(flags),
                 str(fragment_offset), str(ttl), str(protocol), str(source_address), str(destination_address))
     except BaseException as e:
@@ -147,7 +150,7 @@ def parse_ip_header(packet):
 def parse_tcp_header(packet, ip_header_length):
     try:
         tcp_header_raw_data = packet[ip_header_length:ip_header_length + 20]
-        tcp_header = unpack('!HHLLBBHHH', tcp_header_raw_data)
+        tcp_header = unpack("!HHLLBBHHH", tcp_header_raw_data)
 
         source_port = tcp_header[0]
         dest_port = tcp_header[1]
@@ -160,9 +163,9 @@ def parse_tcp_header(packet, ip_header_length):
         window_size = tcp_header[6]
         checksum = tcp_header[7]
 
-        print '\n[Info.] TCP header:'
-        print '{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n' \
-            .format('Source Port', 'Dest Port', 'Sequence Number', 'Acknowledgement', 'TCP Header Length', 'Window Size', 'Checksum') \
+        print "\n[Info.] TCP header:"
+        print "{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n{:<20}|%s\n" \
+            .format("Source Port", "Dest Port", "Sequence Number", "Acknowledgement", "TCP Header Length", "Window Size", "Checksum") \
             % (str(source_port), str(dest_port), str(sequence), str(acknowledgement), str(data_offset), str(window_size), str(checksum))
         tcp_header_size = ip_header_length + data_offset * 4
     except BaseException as e:
@@ -176,8 +179,8 @@ def parse_payload(packet, tcp_header_size):
     try:
         payload = packet[tcp_header_size:]
         data_size = len(packet) - tcp_header_size
-        print '[Info.] Payload Size: %s' % (data_size)
-        print '[Info.] Payload Content: \n%s\n============================================================' % (payload)
+        print "[Info.] Payload Size: %s" % (data_size)
+        print "[Info.] Payload Content: \n%s\n============================================================" % (payload)
     except BaseException as e:
         print "[Exception] Parsing payload failed %s %s" % (type(e), str(e))
         sys.exit(1)
@@ -254,7 +257,7 @@ if __name__ == "__main__":
     print "[Info.] Network config: %s" % interface_network_config
     interface_mac = netifaces.ifaddresses(interface_name)[netifaces.AF_LINK]
     print "[Info.] MAC info: %s" % (interface_mac)
-    attacker_mac = interface_mac[0]['addr']
+    attacker_mac = interface_mac[0]["addr"]
 
     ip_range = raw_input("[Enter] Please input the IP range you want to scan (e.g., 192.168.0.0/24):\n>>")
 
@@ -275,7 +278,7 @@ if __name__ == "__main__":
         sql_command = ('''
             SELECT *
             FROM OUIMAPPING
-            WHERE oui = '%s'
+            WHERE oui = "%s"
             '''
             % (rcv.sprintf("%Ether.src%").upper()[:8]))
         oui_info = manipulate_db(connection, sql_command)
