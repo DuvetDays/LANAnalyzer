@@ -1,24 +1,30 @@
 ## ARPSpoofing
-![](https://img.shields.io/badge/python-2.7-blue)
 ![](https://img.shields.io/badge/platform-Linux--64-brightgreen)
 ![](https://img.shields.io/badge/OS-Ubuntu%2018.04%20LTS-orange)
+![](https://img.shields.io/badge/python-2.7-blue)
 
 ### Description
 A tool for LAN scanning, ARP attacking and packets capturing.  
 For testing or teaching only.
 
-### Prerequisite module
+### Prerequisite environment setup
+
 Install python related modules by using the fellowing commands:  
 1. `sudo apt install python`  
 2. `sudo apt install python-pandas`
 3. `sudo apt install python-pip`
-4. `pip install --upgrade pip enum34`
+4. `sudo pip install --upgrade pip enum34`
 5. `sudo apt-get update -y`
 6. `sudo apt-get install -y scapy`
 7. `sudo apt-get install -y python-netifaces`
 
+Download OUI mac list from the fellowing link:  
+`https://macaddress.io/database-download/csv`  
+then rename the csv file as `mac_address.csv` and place at the same folder.  
+This file will be converted to database in run-time.
+
 ### Usage
-* `sudo python arp_spoofing.py`  
+`sudo python arp_spoofing.py`  
 
 ### Demonstration
 [step1] select **network interface**  
