@@ -5,7 +5,7 @@
 
 ### Description
 A tool for LAN scanning, ARP attacking and packets capturing.  
-For testing or teaching only.
+For academic use only.
 
 ### Prerequisite environment setup
 
@@ -20,26 +20,27 @@ Install python related modules by using the fellowing commands:
 
 Download OUI mac list from the fellowing link:  
 `https://macaddress.io/database-download/csv`  
-then rename the csv file as `mac_address.csv` and place at the same folder.  
+then rename the csv file as `mac_address.csv` and place at the same directory.  
 This file will be converted to database in run-time.
 
 ### Usage
 `sudo python arp_spoofing.py`  
-![gif](https://github.com/DuvetDays/ARPSpoofing/blob/master/arp%20spoofing_1.gif?raw=true)
+![gif](https://github.com/DuvetDays/ARPSpoofing/blob/master/arp%20spoofing_1.gif?raw=true)  
+`Ctrl+C` to stop the program  
 ### Demonstration
-[step1] select **network interface**  
+[step1] Select **network interface**  
 ```
 [Info.] Available network interface list:
 [1]: lo, MAC:[{'peer': '00:00:00:00:00:00', 'addr': '00:00:00:00:00:00'}]
 [2]: ens33, MAC:[{'broadcast': 'ff:ff:ff:ff:ff:ff', 'addr': '00:0c:29:xx:xx:xx'}]
 ```
-[step2] input **IP range** of subnet you want to scan 
+[step2] Input **IP range** of subnet you want to scan 
 ```
 [Info.] Network config: [{'broadcast': '192.168.0.255', 'netmask': '255.255.255.0', 'addr': '192.168.0.93'}]
 [Info.] MAC info: [{'broadcast': 'ff:ff:ff:ff:ff:ff', 'addr': '00:0c:29:xx:xx:xx'}]
 [Enter] Please input the IP range you want to scan (e.g., 192.168.0.0/24):
 ```
- [step3] select **gateway** and **victim** 
+ [step3] Select **gateway** and **victim** 
 ```
 [Info.] Host list:
   No.  |       IP        |         MAC         |                 Company                  
@@ -55,10 +56,37 @@ This file will be converted to database in run-time.
 [Info.] Scan duration: 0:00:39.118150 sec.
 [Info.] Device number in the subnet: 7
 ```
-[step4] selcet **attacking mode**  
+[step4] Select **attacking mode**  
 ```
 [Info.] Please select an attacking mode:
 [1] Man in the middle(MITM)
 [2] Black Hole
 [Enter] Function:
+```
+[step5] Select **sniffing mode** (if in MITM mode)  
+```
+[Info.] Please select the sniffing mode you want:
+[1] All packets in the specific network interface
+[2] Only packets related to the victim
+[Enter] Sniffing mode:
+```
+[step6] Start to attack victim and record packets into .pacp file in the same directory
+(you can use wireshark to open and trace .pcap file)
+```
+BlackHole_traffic_log.pcap  MITM_traffic_log.pcap
+```
+[step7] Ctrl + C to stop running program and restore the LAN automatically
+```
+[Exception] <type 'exceptions.KeyboardInterrupt'> 
+[Info.] Start to recover the LAN.
+[Info.] Please wait for a while.
+[Info.] Sending real ARP replies to gateway...
+........
+Sent 8 packets.
+[Info.] Sending real ARP replies to victim...
+........
+Sent 8 packets.
+[Info.] The LAN has been recovered.
+[Info.] Man in the middle(MITM) attack is over.
+[Info.] Program is shutting down.
 ```
