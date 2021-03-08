@@ -9,7 +9,7 @@ For academic use only.
 
 ### Prerequisite environment setup
 
-Install python related modules by using the fellowing commands:  
+Install python related modules by using the following commands:  
 1. `sudo apt install python`  
 2. `sudo apt install python-pandas`
 3. `sudo apt install python-pip`
@@ -18,15 +18,15 @@ Install python related modules by using the fellowing commands:
 6. `sudo apt-get install -y scapy`
 7. `sudo apt-get install -y python-netifaces`
 
-Download OUI mac list from the fellowing link:  
-`https://macaddress.io/database-download/csv`  
+Download OUI MAC list from the following link:  
+[Download MAC list](https://macaddress.io/database-download/csv)
 then rename the csv file as `mac_address.csv` and place at the same directory.  
 This file will be converted to database in run-time.
 
 ### Usage
 `sudo python arp_spoofing.py`  
 ![gif](https://github.com/DuvetDays/ARPSpoofing/blob/master/arp%20spoofing_1.gif?raw=true)  
-`Ctrl+C` to stop the program  
+`Ctrl + C` to stop the program  
 ### Demonstration
 [step1] Select **network interface**  
 ```
@@ -34,13 +34,13 @@ This file will be converted to database in run-time.
 [1]: lo, MAC:[{'peer': '00:00:00:00:00:00', 'addr': '00:00:00:00:00:00'}]
 [2]: ens33, MAC:[{'broadcast': 'ff:ff:ff:ff:ff:ff', 'addr': '00:0c:29:xx:xx:xx'}]
 ```
-[step2] Input **IP range** of subnet you want to scan 
+[step2] Input **IP range** of subnet that you want to scan 
 ```
 [Info.] Network config: [{'broadcast': '192.168.0.255', 'netmask': '255.255.255.0', 'addr': '192.168.0.93'}]
 [Info.] MAC info: [{'broadcast': 'ff:ff:ff:ff:ff:ff', 'addr': '00:0c:29:xx:xx:xx'}]
 [Enter] Please input the IP range you want to scan (e.g., 192.168.0.0/24):
 ```
- [step3] Select **gateway** and **victim** 
+[step3] Select **gateway** and **victim** in host list
 ```
 [Info.] Host list:
   No.  |       IP        |         MAC         |                 Company                  
@@ -71,11 +71,11 @@ This file will be converted to database in run-time.
 [Enter] Sniffing mode:
 ```
 [step6] Start to attack victim and record packets into .pacp file in the same directory
-(you can use wireshark to open and trace .pcap file)
+(p.s. you can use **wireshark** to open and trace .pcap file)
 ```
 BlackHole_traffic_log.pcap  MITM_traffic_log.pcap
 ```
-[step7] Ctrl + C to stop running program and restore the LAN automatically
+[step7] `Ctrl + C` to stop running program and restore the LAN automatically
 ```
 [Exception] <type 'exceptions.KeyboardInterrupt'> 
 [Info.] Start to recover the LAN.
