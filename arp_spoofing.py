@@ -1,6 +1,7 @@
 from scapy.all import*
 from struct import*
 from datetime import datetime
+from pandas import DataFrame
 import os
 import sys
 import socket
@@ -9,7 +10,6 @@ import time
 import enum
 import sqlite3
 import pandas as pd
-from pandas import DataFrame
 
 target_interface = "empty"
 attacker_mac = "ff:ff:ff:ff:ff:ff"
@@ -32,8 +32,8 @@ def create_db_and_table():
         conn.text_factory = str
         print "[Info.] Connect database successfully"
 
-        read_clients = pd.read_csv (r"./mac_address.csv")
-        read_clients.to_sql("OUIMAPPING", conn, if_exists="replace", index = False)
+        read_file = pd.read_csv (r"./mac_address.csv")
+        read_file.to_sql("OUIMAPPING", conn, if_exists="replace", index = False)
         print "[Info.] Create table successfully"
     except BaseException as e:
         print "[Exception] %s %s" % (type(e), str(e))
@@ -262,9 +262,9 @@ if __name__ == "__main__":
 
     print "[Info.] Now scanning...\n[Info.] Please wait for a while."
     start_time = datetime.now()
-    conf.verb = 1
+    conf.verb = 0
 
-    ans, unans = srp(Ether(dst=broadcast_mac)/ARP(pdst=ip_range), timeout=8, iface=interface_name, inter=0.12)
+    ans, unans = arping(ip_range) #srp(Ether(dst=broadcast_mac)/ARP(pdst=ip_range), timeout=8, iface=interface_name, inter=0.12)
     device_list = []
 
     print "\n[Info.] Host list:\n{:^7}|{:^17}|{:^21}|{:^42}".format("No.", "IP", "MAC", "Company")
