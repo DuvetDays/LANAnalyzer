@@ -15,6 +15,15 @@ target_interface = "empty"
 attacker_mac = "ff:ff:ff:ff:ff:ff"
 broadcast_mac = "ff:ff:ff:ff:ff:ff"
 
+class FeatureType(enum.IntEnum):
+    ANALYZE = 1
+    ATTACK = 2
+    TERMINATE = 3
+
+class NmapOption(enum.IntEnum):
+    A = 1
+    O = 2
+    NO_OPTION = 3
 
 class AttackType(enum.IntEnum):
     MAN_IN_THE_MIDDLE = 1
@@ -304,7 +313,7 @@ if __name__ == "__main__":
     print "[Info.] MAC info: %s" % (interface_mac)
     attacker_mac = interface_mac[0]["addr"]
 
-    ip_range = raw_input("[Enter] Please input the IP range you want to scan (e.g., 192.168.0.0/24):\n>>")
+    ip_range = raw_input("[Enter] Please input the IP range you want to scan in CIDR format(e.g., 192.168.0.0/24):\n>>")
 
     print "[Info.] Creating OUI DB..."
     connection = create_db_and_table()
@@ -337,7 +346,27 @@ if __name__ == "__main__":
     total_time = stop_time - start_time
     device_count = len(device_list)
     print "\n[Info.] Scan completed.\n[Info.] Scan duration: %s sec." % (total_time)
-    print "[Info.] Number of device(s) in the subnet: %d" % (device_count)
+    print "[Info.] Number of device(s) in the subnet %s: %d" % (ip_range, device_count)
+
+    while True:
+        feature = int(raw_input("[Enter] Which function do you want?\n[1] Analyze other devices\n[2] Attack other devices\n[3] Terminate the program\n>>"))
+        if feature == FeatureType.ANALYZE:
+            nmap_target = int(raw_input("[Enter] Which device do you want to scan?\n>>"))
+            nmap_opt = int(raw_input("[Enter] Which nmap options do you want?\n[1] -A: scan for services and OS information\n[2] -O: scan for OS information\n[3] No option\n>>"))
+            print "[Info.] target port scanning:\n"
+            if nmap_opt == NmapOption.A:
+                os.system("nmap -A %s" % (device_list[nmap_target - 1]["IP"]))
+            if nmap_opt == NmapOption.O:
+                os.system("nmap -O %s" % (device_list[nmap_target - 1]["IP"]))
+            if nmap_opt == NmapOption.NO_OPTION:
+                os.system("nmap %s" % (device_list[nmap_target - 1]["IP"]))
+        elif feature == FeatureType.ATTACK:
+            break
+        elif feature == FeatureType.TERMINATE:
+            print "[Info.] Program is shutting down."
+            sys.exit(1)
+        else:
+            continue
 
     while True:
         gateway_info = int(raw_input("[Enter] Please select the subnet gateway IP:\n>>"))
